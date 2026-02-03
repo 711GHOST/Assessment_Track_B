@@ -3,4 +3,4 @@ uvicorn
 qdrant-client
 transformers
 torch
-git+https://github.com/cohere-ai/cohere-rerank.git
+cohere-rerank
