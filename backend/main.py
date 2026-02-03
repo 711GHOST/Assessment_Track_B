@@ -1,8 +1,23 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "https://assessment-track-b-w7o7.vercel.app",  # your frontend
+    "http://localhost:3000",  # local dev
+    "http://localhost:5173"   # if using Vite
+]
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # or ["*"] for testing only
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Define data models
 class Document(BaseModel):
