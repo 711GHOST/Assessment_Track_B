@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './App.css';
 
+const BACKEND_URL = "https://assessment-track-b.onrender.com";
+
 function App() {
   const [text, setText] = useState("");
   const [query, setQuery] = useState("");
@@ -8,7 +10,7 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   const handleUpload = async () => {
-    const response = await fetch("http://localhost:8000/upload", {
+    const response = await fetch(`${BACKEND_URL}/upload`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,7 +29,7 @@ function App() {
 
   const handleQuery = async () => {
     setLoading(true);
-    const response = await fetch("http://localhost:8000/query", {
+    const response = await fetch(`${BACKEND_URL}/query`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
