@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run FastAPI Backend",
+			"type": "shell",
+			"command": "\"C:/Users/ASUS/OneDrive/Desktop/Predusk Assessment/.venv/Scripts/python.exe\" -m uvicorn backend.main:app --reload",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

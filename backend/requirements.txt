@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+qdrant-client
+transformers
+torch
+cohere-rerank
