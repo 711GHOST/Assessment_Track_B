@@ -1,22 +1,24 @@
-from cohere_rerank import CohereRerank
-from typing import List, Dict
+import cohere
 import os
+from typing import List, Dict
 
-# Initialize Gemini Rerank client
-api_key = os.getenv("GEMINI_API_KEY")
-reranker = CohereRerank(api_key=api_key)
+# Initialize Cohere client
+api_key = os.getenv("COHERE_API_KEY")
+co = cohere.Client(api_key=api_key)
 
 # Function to rerank retrieved documents
 def rerank_documents(query: str, documents: List[Dict]) -> List[Dict]:
-    rerank_input = {
-        "query": query,
-        "documents": [doc["text"] for doc in documents]
-    }
-    reranked = reranker.rerank(**rerank_input)
+    document_texts = [doc["text"] for doc in documents]
+    response = co.rerank(
+        query=query,
+        documents=document_texts,
+        model="rerank-english-v3.0",
+        top_n=len(documents)
+    )
 
     # Combine reranked scores with documents
-    for doc, score in zip(documents, reranked["scores"]):
-        doc["score"] = score
+    for doc, result in zip(documents, response.results):
+        doc["score"] = result.relevance_score
 
     # Sort documents by score in descending order
     documents.sort(key=lambda x: x["score"], reverse=True)
