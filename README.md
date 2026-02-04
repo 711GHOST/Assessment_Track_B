@@ -49,11 +49,14 @@ flowchart LR
 
     K --> B
 ```
+---
 
 ## Chunking Parameters
 - **Chunk Size**: 1000 tokens
 - **Overlap**: 150 tokens
 - **Reason**: Preserves context across chunk boundaries while keeping chunks semantically meaningful.
+
+---
 
 ## Retriever Configuration
 - **Vector Database**: Qdrant
@@ -63,16 +66,22 @@ flowchart LR
 - **Collection Name**: documents
 - **Upsert Strategy**: UUID-based overwrite
 
+---
+
 ## Reranker
 - **Provider**: Cohere
 - **Model**: rerank-english-v3.0
 - Improves relevance ordering of retrieved chunks before answer generation.
+
+---
 
 ## Providers Used
 - **Embeddings**: Sentence Transformers
 - **Reranker**: Cohere
 - **LLM**: Google Gemini
 - **Vector DB**: Qdrant
+
+---
 
 ## API EndPoints
 ### Health
@@ -117,6 +126,8 @@ flowchart LR
 }
 ```
 
+---
+
 ## Evaluation (Gold Set)
 
 **Document:**
@@ -136,6 +147,8 @@ flowchart LR
 **Observation:**  
 Answers are grounded with citations. Some paraphrasing occasionally omits details.
 
+---
+
 ## Quickstart
 ### Backend
 ```bash
@@ -148,13 +161,24 @@ npm install
 npm start
 ```
 
+---
+
 ## Deployment
 - **Backend**: Render
 - **Frontend**: Vercel
 - API keys are stored securely using environment variables.
+
+---
 
 ## Tradeoffs / Remarks
 - Token and cost estimates are approximate.
 - Designed for small to medium document collections.
 - Single-document upload (can be extended to batch ingestion).
 - Not optimized for large-scale multi-tenant usage.
+
+---
+
+## Resume
+
+You can view my resume here:  
+🔗 **[View Resume](https://drive.google.com/file/d/1jXXItduSQuqJF13eLAPzvypvmAgHT6s7/view?usp=sharing)**
