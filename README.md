@@ -12,7 +12,7 @@ This is a Mini Retrieval-Augmented Generation (RAG) application that allows user
 - **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2`  
 - **Reranker**: Cohere Rerank (`rerank-english-v3.0`)  
 - **LLM**: Google Gemini (`google.genai` SDK)  
-- **Hosting**: Render (backend), Vercel (frontend)
+- **Hosting**: HuggingFace Spaces (backend), Vercel (frontend)
 
 ---
 
@@ -164,7 +164,7 @@ npm start
 ---
 
 ## Deployment
-- **Backend**: Render
+- **Backend**: HuggingFace Spaces
 - **Frontend**: Vercel
 - API keys are stored securely using environment variables.
 
