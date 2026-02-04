@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 
-const BACKEND_URL = "https://assessment-track-b.onrender.com";
+const BACKEND_URL = "https://shwetanshu25-mini-rag-backend.hf.space";
 
 function App() {
   const [text, setText] = useState("");
