@@ -5,3 +5,4 @@ transformers
 torch
 cohere
 google-genai
+python-dotenv

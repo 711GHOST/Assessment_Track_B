@@ -1,25 +1,27 @@
 from qdrant_client import QdrantClient
-from qdrant_client.models import PointStruct
+from qdrant_client.models import PointStruct, VectorParams, Distance
 from typing import List, Dict
 import os
 
-# Initialize Qdrant client
+from dotenv import load_dotenv
+load_dotenv()
+
 qdrant_client = QdrantClient(
-    url=os.getenv("QDRANT_URL"),
+    url=os.getenv("QDRANT_URL"),      # for cloud
     api_key=os.getenv("QDRANT_API_KEY")
 )
 
 COLLECTION_NAME = "documents"
 
-# Ensure collection exists
 def initialize_collection():
     qdrant_client.recreate_collection(
         collection_name=COLLECTION_NAME,
-        vector_size=768,  # Placeholder for embedding size
-        distance="Cosine"
+        vectors_config=VectorParams(
+            size=384,   # must match embedding model
+            distance=Distance.COSINE
+        )
     )
 
-# Add documents to the vector database
 def add_documents_to_db(documents: List[Dict]):
     points = [
         PointStruct(
@@ -34,14 +36,11 @@ def add_documents_to_db(documents: List[Dict]):
     ]
     qdrant_client.upsert(collection_name=COLLECTION_NAME, points=points)
 
-# Retrieve top-k documents
-def retrieve_top_k(query_vector: List[float], top_k: int):
-    search_result = qdrant_client.search(
+def retrieve_top_k(query_vector: list, top_k: int):
+    return qdrant_client.search(
         collection_name=COLLECTION_NAME,
         query_vector=query_vector,
         limit=top_k
     )
-    return search_result
 
-# Initialize the collection on module load
 initialize_collection()
