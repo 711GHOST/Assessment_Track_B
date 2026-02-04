@@ -4,3 +4,4 @@ qdrant-client
 transformers
 torch
 cohere
+google-genai

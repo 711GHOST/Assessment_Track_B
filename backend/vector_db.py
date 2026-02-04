@@ -1,9 +1,13 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
 from typing import List, Dict
+import os
 
 # Initialize Qdrant client
-qdrant_client = QdrantClient("localhost", port=6333)
+qdrant_client = QdrantClient(
+    url=os.getenv("QDRANT_URL"),
+    api_key=os.getenv("QDRANT_API_KEY")
+)
 
 COLLECTION_NAME = "documents"
 
