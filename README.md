@@ -1,95 +1,160 @@
-# Mini RAG Application
+# Mini RAG Application (Track B)
 
-## Overview
-This is a Mini Retrieval-Augmented Generation (RAG) application built with the following tech stack:
-- **Backend**: FastAPI
-- **Frontend**: React
-- **Vector Database**: Qdrant
-- **Embeddings**: Gemmini or Cohere
-- **Reranker**: Cohere Rerank
-
-The application allows users to upload documents, query them, and receive grounded answers with inline citations.
+## Overview  
+This is a Mini Retrieval-Augmented Generation (RAG) application that allows users to upload text documents, query them, and receive grounded answers with inline citations.
 
 ---
 
-## Architecture
-![Architecture Diagram](architecture-diagram-placeholder.png)
-
-1. **Document Upload**: Users upload or paste text, which is chunked and stored in the vector database.
-2. **Query Flow**: Queries retrieve top-k documents, rerank them, and generate answers using an LLM.
-3. **Frontend**: Displays answers, citations, latency, token estimates, and cost estimates.
+## Tech Stack  
+- **Backend**: FastAPI  
+- **Frontend**: React  
+- **Vector Database**: Qdrant (Cloud)  
+- **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2`  
+- **Reranker**: Cohere Rerank (`rerank-english-v3.0`)  
+- **LLM**: Google Gemini (`google.genai` SDK)  
+- **Hosting**: Render (backend), Vercel (frontend)
 
 ---
+
+## Architecture  
+
+**Flow:**  
+Upload → Chunk → Embed → Store (Qdrant)  
+Query → Embed → Retrieve → Rerank → LLM Answer → Citations  
+
+```mermaid
+flowchart LR
+    A[User / Browser] --> B[React Frontend]
+
+    B -->|Upload Text| C[FastAPI Backend]
+    B -->|Query| C
+
+    C --> D[Chunking Module]
+    D --> E[Embedding Model<br/>sentence-transformers/all-MiniLM-L6-v2]
+
+    E --> F[Qdrant Cloud<br/>Vector DB]
+
+    C -->|Query Embedding| E
+    C -->|Top-K Retrieval| F
+
+    F --> G[Retrieved Chunks]
+
+    G --> H[Cohere Reranker<br/>rerank-english-v3.0]
+
+    H --> I[Top Ranked Context]
+
+    I --> J[Gemini LLM<br/>google.genai]
+
+    J --> K[Answer with Inline Citations]
+
+    K --> B
+```
 
 ## Chunking Parameters
 - **Chunk Size**: 1000 tokens
 - **Overlap**: 150 tokens
-- **Strategy**: Text is tokenized, split into overlapping chunks, and converted back to strings.
-
----
+- **Reason**: Preserves context across chunk boundaries while keeping chunks semantically meaningful.
 
 ## Retriever Configuration
 - **Vector Database**: Qdrant
 - **Distance Metric**: Cosine similarity
-- **Embedding Size**: 768 (using `sentence-transformers/all-MiniLM-L6-v2`)
-
----
+- **Embedding Model**: sentence-transformers/all-MiniLM-L6-v2
+- **Embedding Size**: 384
+- **Collection Name**: documents
+- **Upsert Strategy**: UUID-based overwrite
 
 ## Reranker
-- **Provider**: Cohere Rerank
-- **API Key**: Required in `.env` file
-
----
+- **Provider**: Cohere
+- **Model**: rerank-english-v3.0
+- Improves relevance ordering of retrieved chunks before answer generation.
 
 ## Providers Used
-- **Embeddings**: Gemini or Cohere
+- **Embeddings**: Sentence Transformers
 - **Reranker**: Cohere
-- **Vector Database**: Qdrant
+- **LLM**: Google Gemini
+- **Vector DB**: Qdrant
 
----
+## API EndPoints
+### Health
+#### GET /health
+**Response**:
+```json
+{ "status": "ok" }
+```
+
+### Upload Document
+#### POST /upload
+**Request**:
+```json
+{
+  "id": "doc1",
+  "text": "your document text here",
+  "metadata": {}
+}
+```
+**Response**:
+```json
+{ "message": "Document indexed successfully." }
+```
+
+### Query
+#### POST /query
+**Request**:
+```json
+{
+  "query": "What is LangChain?",
+  "top_k": 3
+}
+```
+**Response**:
+```json
+{
+  "answer": "LangChain is a framework for building applications powered by large language models. [1]",
+  "citations": ["[1] Source: {'source': 'doc1', 'chunk': 0}"],
+  "latency": 0.45,
+  "token_estimate": 180,
+  "cost_estimate": 0.0
+}
+```
+
+## Evaluation (Gold Set)
+
+**Document:**
+
+> “LangChain is a framework for developing applications powered by large language models. It provides chains, agents, and memory.”
+
+| Question                         | Expected Answer          | Result |
+|----------------------------------|--------------------------|--------|
+| What is LangChain?               | Framework for LLM apps   | ✅     |
+| What does LangChain provide?     | Chains, agents, memory   | ✅     |
+| Is LangChain used for LLM apps?  | Yes                      | ✅     |
+| What type of framework is it?    | AI framework             | ✅     |
+| What problem does it solve?      | Helps build LLM apps     | ❌     |
+
+**Accuracy:** 4 / 5 = **80%**
+
+**Observation:**  
+Answers are grounded with citations. Some paraphrasing occasionally omits details.
 
 ## Quickstart
-
 ### Backend
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Run the FastAPI server:
-   ```bash
-   uvicorn main:app --reload
-   ```
-
+```bash
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 ### Frontend
-1. Navigate to the `frontend` directory.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the React app:
-   ```bash
-   npm start
-   ```
-
----
+```bash
+npm install
+npm start
+```
 
 ## Deployment
-- **Hosting**: Render, Vercel, or Hugging Face Spaces
-- **Environment Variables**: Store API keys in `.env` file
+- **Backend**: Render
+- **Frontend**: Vercel
+- API keys are stored securely using environment variables.
 
----
-
-## Tradeoffs/Remarks
-- **Latency**: Using hosted services may introduce latency.
-- **Cost**: Gemini and Cohere APIs incur usage costs.
-- **Scalability**: Suitable for small-scale applications; may require optimization for large datasets.
-
----
-
-## .env Example
-```
-GEMINI_API_KEY=your-gemini-api-key
-COHERE_API_KEY=your-cohere-api-key
-QDRANT_HOST=localhost
-QDRANT_PORT=6333
-```
+## Tradeoffs / Remarks
+- Token and cost estimates are approximate.
+- Designed for small to medium document collections.
+- Single-document upload (can be extended to batch ingestion).
+- Not optimized for large-scale multi-tenant usage.
