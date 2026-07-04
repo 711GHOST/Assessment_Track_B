@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "./App.css";
 
 const BACKEND_URL =
-  process.env.REACT_APP_API_URL ||
+  process.env.REACT_APP_BACKEND_URL ||
   "https://shwetanshu25-mini-rag-backend.hf.space";
 
 function App() {
