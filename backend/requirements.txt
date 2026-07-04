@@ -1,8 +1,16 @@
-fastapi
-uvicorn
-qdrant-client==1.9.1
-transformers
-torch
-cohere
-google-genai
-python-dotenv
+# --- Core API ---
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.8
+pydantic-settings>=2.4
+email-validator>=2.1
+
+# --- Auth / security ---
+PyJWT>=2.9
+bcrypt>=4.1
+
+# --- Optional providers (activated by env vars; safe to keep installed) ---
+motor>=3.5            # MongoDB   (MONGODB_URI)
+qdrant-client>=1.12   # Qdrant    (QDRANT_URL)
+cohere>=5.9           # Reranker  (COHERE_API_KEY)
+google-genai>=1.0     # Gemini    (GEMINI_API_KEY)

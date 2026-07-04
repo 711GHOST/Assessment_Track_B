@@ -1,184 +1,198 @@
-# Mini RAG Application (Track B)
+# RAG Application — Full-Stack Retrieval-Augmented Generation Platform
 
-## Overview  
-This is a Mini Retrieval-Augmented Generation (RAG) application that allows users to upload text documents, query them, and receive grounded answers with inline citations.
+A production-style RAG platform where users sign up, upload documents into a
+private knowledge base, and ask questions that are answered **with inline
+citations** grounded in their own documents.
+
+Built with a **provider-agnostic architecture**: every external service
+(LLM, embeddings, reranker, vector DB, database) has a free local fallback,
+so the entire app runs end-to-end **with zero API keys** — then upgrades
+seamlessly when keys are added.
+
+| | Default (no keys) | With API keys |
+|---|---|---|
+| **Answers** | Local extractive answering | Google Gemini |
+| **Embeddings** | Local feature-hashing (384-d) | Gemini `text-embedding-004` |
+| **Reranker** | Lexical overlap scoring | Cohere Rerank v3 |
+| **Vector store** | In-memory (cosine) | Qdrant Cloud |
+| **Database** | In-memory | MongoDB Atlas |
 
 ---
 
-## Tech Stack  
-- **Backend**: FastAPI  
-- **Frontend**: React  
-- **Vector Database**: Qdrant (Cloud)  
-- **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2`  
-- **Reranker**: Cohere Rerank (`rerank-english-v3.0`)  
-- **LLM**: Google Gemini (`google.genai` SDK)  
-- **Hosting**: HuggingFace Spaces (backend), Vercel (frontend)
+## Features
 
----
+- **Authentication** — register / login / logout with bcrypt password
+  hashing, short-lived JWT access tokens, and rotating revocable refresh
+  tokens.
+- **Private multi-tenant knowledge bases** — every document and vector is
+  namespaced by user; users can never retrieve each other's content
+  (covered by tests).
+- **Grounded answers with citations** — every answer cites the exact
+  chunks it came from, with source title, chunk index, relevance score and
+  snippet.
+- **Answer confidence scoring** — each response carries a 0–100 grounding
+  score (from retrieval strength), shown as an animated ring.
+- **AI-suggested questions** — starter questions auto-generated from the
+  salient terms in your indexed documents.
+- **Answer feedback** — thumbs up/down per answer, rolled into workspace
+  analytics.
+- **Workspace analytics** — live dashboard of documents, chunks, questions,
+  average confidence, average latency and helpful votes.
+- **Scoped questioning** — restrict a question to selected documents.
+- **Chat history** — persisted per user, clearable.
+- **Security hardening** — per-IP rate limiting, security headers, CORS
+  allowlist, account-enumeration-safe login errors, password policy.
+- **Graceful degradation** — if a provider call fails at runtime, the
+  pipeline falls back to extractive answering instead of erroring.
 
-## Architecture  
+### Experience
 
-**Flow:**  
-Upload → Chunk → Embed → Store (Qdrant)  
-Query → Embed → Retrieve → Rerank → LLM Answer → Citations  
+A polished, animated single-page app: a 3D constellation background with
+aurora lighting, a rotating 3D logo, glassmorphism panels with cursor-reactive
+tilt, "streaming" typewriter answers, an animated confidence ring, count-up
+stat cards, drag-and-drop upload, toast notifications, and a **dark / light
+theme toggle**.
+
+## Architecture
 
 ```mermaid
 flowchart LR
-    A[User / Browser] --> B[React Frontend]
+    U[Browser<br/>React + Vite] -->|JWT auth| A[FastAPI]
 
-    B -->|Upload Text| C[FastAPI Backend]
-    B -->|Query| C
+    subgraph API layer
+        A --> AU[Auth routes]
+        A --> DO[Document routes]
+        A --> CH[Chat routes]
+    end
 
-    C --> D[Chunking Module]
-    D --> E[Embedding Model<br/>sentence-transformers/all-MiniLM-L6-v2]
+    subgraph RAG pipeline
+        DO --> C[Chunking<br/>sentence-aware, overlap]
+        C --> E[Embeddings<br/>hashing / Gemini]
+        E --> V[(Vector store<br/>in-memory / Qdrant)]
+        CH --> E
+        V --> R[Reranker<br/>lexical / Cohere]
+        R --> L[Answerer<br/>extractive / Gemini]
+        L --> CIT[Answer + citations]
+    end
 
-    E --> F[Qdrant Cloud<br/>Vector DB]
-
-    C -->|Query Embedding| E
-    C -->|Top-K Retrieval| F
-
-    F --> G[Retrieved Chunks]
-
-    G --> H[Cohere Reranker<br/>rerank-english-v3.0]
-
-    H --> I[Top Ranked Context]
-
-    I --> J[Gemini LLM<br/>google.genai]
-
-    J --> K[Answer with Inline Citations]
-
-    K --> B
-```
----
-
-## Chunking Parameters
-- **Chunk Size**: 1000 tokens
-- **Overlap**: 150 tokens
-- **Reason**: Preserves context across chunk boundaries while keeping chunks semantically meaningful.
-
----
-
-## Retriever Configuration
-- **Vector Database**: Qdrant
-- **Distance Metric**: Cosine similarity
-- **Embedding Model**: sentence-transformers/all-MiniLM-L6-v2
-- **Embedding Size**: 384
-- **Collection Name**: documents
-- **Upsert Strategy**: UUID-based overwrite
-
----
-
-## Reranker
-- **Provider**: Cohere
-- **Model**: rerank-english-v3.0
-- Improves relevance ordering of retrieved chunks before answer generation.
-
----
-
-## Providers Used
-- **Embeddings**: Sentence Transformers
-- **Reranker**: Cohere
-- **LLM**: Google Gemini
-- **Vector DB**: Qdrant
-
----
-
-## API EndPoints
-### Health
-#### GET /health
-**Response**:
-```json
-{ "status": "ok" }
+    subgraph Storage
+        AU --> DB[(users, chats,<br/>refresh tokens<br/>in-memory / MongoDB)]
+        DO --> DB
+        CH --> DB
+    end
 ```
 
-### Upload Document
-#### POST /upload
-**Request**:
-```json
-{
-  "id": "doc1",
-  "text": "your document text here",
-  "metadata": {}
-}
+Full design rationale in [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Tech stack
+
+- **Backend**: FastAPI (Python 3.11), Pydantic v2, PyJWT, bcrypt
+- **Frontend**: React 18 + Vite, React Router, hand-rolled CSS design system
+- **Storage**: in-memory ➜ MongoDB (Motor) · in-memory vectors ➜ Qdrant
+- **Models**: local fallbacks ➜ Gemini (LLM + embeddings), Cohere (rerank)
+- **Tests**: pytest — 33 tests covering auth, isolation, ingestion, retrieval,
+  confidence, suggestions, feedback and analytics
+- **Deploy**: Docker → Render / Northflank (API), Vercel (frontend)
+
+## Project structure
+
 ```
-**Response**:
-```json
-{ "message": "Document indexed successfully." }
+backend/
+  app/
+    main.py            # app factory, middleware, router mounting
+    core/              # config, JWT + bcrypt security, rate limiter
+    api/routes/        # auth, documents, chat, health
+    schemas/           # request/response models (validation)
+    db/                # repository interfaces + memory & Mongo adapters
+    rag/               # chunking, embeddings, vector stores, reranker,
+                       # answerers, pipeline orchestration
+  tests/               # pytest suite (runs with zero keys)
+  Dockerfile
+frontend/
+  src/
+    api/client.js      # fetch wrapper, token refresh on 401
+    context/           # auth, theme (dark/light), toast
+    hooks/             # useTypewriter, useCountUp
+    pages/             # Login, Register, Dashboard
+    components/        # Navbar, DocumentsPanel, ChatPanel, StatsBar,
+                       # ConfidenceRing, AnimatedBackground, TiltCard, Logo, ...
+    styles/global.css  # design system (themed, animated)
+render.yaml            # one-click Render blueprint
+DEPLOYMENT.md          # step-by-step hosting guide
 ```
 
-### Query
-#### POST /query
-**Request**:
-```json
-{
-  "query": "What is LangChain?",
-  "top_k": 3
-}
-```
-**Response**:
-```json
-{
-  "answer": "LangChain is a framework for building applications powered by large language models. [1]",
-  "citations": ["[1] Source: {'source': 'doc1', 'chunk': 0}"],
-  "latency": 0.45,
-  "token_estimate": 180,
-  "cost_estimate": 0.0
-}
-```
+## Quickstart (no API keys needed)
 
----
+**Backend**
 
-## Evaluation (Gold Set)
-
-**Document:**
-
-> “LangChain is a framework for developing applications powered by large language models. It provides chains, agents, and memory.”
-
-| Question                         | Expected Answer          | Result |
-|----------------------------------|--------------------------|--------|
-| What is LangChain?               | Framework for LLM apps   | ✅     |
-| What does LangChain provide?     | Chains, agents, memory   | ✅     |
-| Is LangChain used for LLM apps?  | Yes                      | ✅     |
-| What type of framework is it?    | AI framework             | ✅     |
-| What problem does it solve?      | Helps build LLM apps     | ❌     |
-
-**Accuracy:** 4 / 5 = **80%**
-
-**Observation:**  
-Answers are grounded with citations. Some paraphrasing occasionally omits details.
-
----
-
-## Quickstart
-### Backend
 ```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate          # Windows   (macOS/Linux: source .venv/bin/activate)
 pip install -r requirements.txt
-uvicorn main:app --reload
-```
-### Frontend
-```bash
-npm install
-npm start
+uvicorn app.main:app --reload   # http://127.0.0.1:8000 — docs at /docs
 ```
 
----
+**Frontend** (second terminal)
+
+```bash
+cd frontend
+npm install
+npm run dev                     # http://localhost:5173 (proxies /api to :8000)
+```
+
+Register an account, upload a `.txt`/`.md` file or paste text, and ask
+questions. The navbar shows which providers are active.
+
+**Tests**
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+pytest
+```
+
+## Configuration
+
+Copy `backend/.env.example` to `backend/.env`. Everything is optional:
+
+| Variable | Effect when set |
+|---|---|
+| `JWT_SECRET` | Stable signing key (required in production) |
+| `MONGODB_URI` | Persistent users/documents/chats in MongoDB |
+| `QDRANT_URL` + `QDRANT_API_KEY` | Persistent vectors in Qdrant |
+| `GEMINI_API_KEY` | LLM answers via Gemini |
+| `EMBEDDING_PROVIDER=gemini` | Neural embeddings (needs Gemini key) |
+| `COHERE_API_KEY` | Neural reranking via Cohere |
+| `CORS_ORIGINS` | Comma-separated allowed frontend origins |
+
+## API overview
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/auth/register` | – | Create account, returns token pair |
+| POST | `/api/auth/login` | – | Login, returns token pair |
+| POST | `/api/auth/refresh` | – | Rotate refresh token |
+| POST | `/api/auth/logout` | – | Revoke refresh token |
+| GET | `/api/auth/me` | ✅ | Current user |
+| POST | `/api/documents` | ✅ | Ingest (chunk → embed → index) |
+| GET | `/api/documents` | ✅ | List documents |
+| DELETE | `/api/documents/{id}` | ✅ | Delete document + vectors |
+| POST | `/api/chat/query` | ✅ | Ask; returns answer + citations + confidence |
+| GET | `/api/chat/suggestions` | ✅ | Auto-generated starter questions |
+| POST | `/api/chat/{id}/feedback` | ✅ | Rate an answer (up/down) |
+| GET | `/api/chat/history` | ✅ | Chat history |
+| DELETE | `/api/chat/history` | ✅ | Clear history |
+| GET | `/api/stats` | ✅ | Workspace analytics |
+| GET | `/api/health` | – | Status + active providers |
+
+Interactive docs: `http://127.0.0.1:8000/docs`.
 
 ## Deployment
-- **Backend**: HuggingFace Spaces
-- **Frontend**: Vercel
-- API keys are stored securely using environment variables.
 
----
+See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step guides:
+Render **or** Northflank for the API (Docker), Vercel for the frontend.
 
-## Tradeoffs / Remarks
-- Token and cost estimates are approximate.
-- Designed for small to medium document collections.
-- Single-document upload (can be extended to batch ingestion).
-- Not optimized for large-scale multi-tenant usage.
+## Roadmap
 
----
-
-## Resume
-
-You can view my resume here:  
-🔗 **[View Resume](https://drive.google.com/file/d/1jXXItduSQuqJF13eLAPzvypvmAgHT6s7/view?usp=sharing)**
+See [TODO.md](TODO.md).

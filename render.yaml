@@ -1,0 +1,33 @@
+# Render Blueprint — deploy the backend with "New > Blueprint" in Render.
+# The same Dockerfile also works on Northflank (create a combined service
+# with build type "Dockerfile" and context /backend).
+services:
+  - type: web
+    name: rag-application-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      # Set to your deployed Vercel frontend URL after the first deploy.
+      - key: CORS_ORIGINS
+        value: https://YOUR-FRONTEND.vercel.app
+      # Fill these in the Render dashboard when you have the keys.
+      # Blank values keep the free local fallbacks active.
+      - key: MONGODB_URI
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: COHERE_API_KEY
+        sync: false
+      - key: EMBEDDING_PROVIDER
+        value: local
