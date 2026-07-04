@@ -4,7 +4,7 @@ Target setup: **API on Render or Northflank** (Docker) + **frontend on
 Vercel**. Both paths are covered; pick one for the API.
 
 > Important free-tier note: with no `MONGODB_URI`/`QDRANT_URL` configured,
-> data lives in process memory — it disappears on every restart/redeploy,
+> data lives in process memory - it disappears on every restart/redeploy,
 > and Render's free tier sleeps after inactivity. Fine for a demo; add
 > MongoDB Atlas + Qdrant Cloud (both have free tiers) for persistence.
 
@@ -18,7 +18,7 @@ Vercel**. Both paths are covered; pick one for the API.
   python -c "import secrets; print(secrets.token_urlsafe(48))"
   ```
 
-## 1a. API on Render (blueprint — easiest)
+## 1a. API on Render (blueprint - easiest)
 
 1. Sign in at [render.com](https://render.com) with GitHub.
 2. **New → Blueprint**, select this repository. Render reads
@@ -57,7 +57,7 @@ Vercel**. Both paths are covered; pick one for the API.
    handles SPA routing.
 3. Add environment variable:
    - `VITE_API_URL` = `https://<your-api>.onrender.com` (or the
-     Northflank URL) — **no trailing slash**.
+     Northflank URL) - **no trailing slash**.
 4. Deploy. Note your production URL, e.g. `https://rag-studio.vercel.app`.
 
 ## 3. Connect the two (CORS)
@@ -73,21 +73,21 @@ against the deployed API). Redeploy/restart the API.
 
 ## 4. Add persistence when ready (both free)
 
-**MongoDB Atlas** — create an M0 free cluster at
+**MongoDB Atlas** - create an M0 free cluster at
 [mongodb.com/atlas](https://www.mongodb.com/atlas), create a database user,
 allow access from `0.0.0.0/0` (or the host's IPs), copy the connection
 string into `MONGODB_URI`. Users, documents metadata, chat history and
 refresh tokens become persistent.
 
-**Qdrant Cloud** — create a free 1GB cluster at
+**Qdrant Cloud** - create a free 1GB cluster at
 [cloud.qdrant.io](https://cloud.qdrant.io), copy the cluster URL into
 `QDRANT_URL` and the API key into `QDRANT_API_KEY`. Vectors become
 persistent; the collection is created automatically on startup.
 
-**Model keys** — `GEMINI_API_KEY` from
+**Model keys** - `GEMINI_API_KEY` from
 [aistudio.google.com](https://aistudio.google.com/apikey) (free tier),
 `COHERE_API_KEY` from [dashboard.cohere.com](https://dashboard.cohere.com)
-(trial). Optionally set `EMBEDDING_PROVIDER=gemini` for neural embeddings —
+(trial). Optionally set `EMBEDDING_PROVIDER=gemini` for neural embeddings -
 do this **before** indexing documents you care about, since existing
 384-d vectors are not reused by the 768-d collection.
 

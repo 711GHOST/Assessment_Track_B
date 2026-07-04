@@ -1,8 +1,8 @@
 """Rerankers reorder retrieved chunks by relevance to the query.
 
-* LexicalReranker — local fallback blending vector score with keyword
+* LexicalReranker - local fallback blending vector score with keyword
   overlap; catches cases where hashing embeddings are noisy.
-* CohereReranker — neural cross-encoder via the Cohere API (COHERE_API_KEY).
+* CohereReranker - neural cross-encoder via the Cohere API (COHERE_API_KEY).
 """
 from __future__ import annotations
 

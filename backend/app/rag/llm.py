@@ -1,9 +1,9 @@
 """Answer generators.
 
-* ExtractiveAnswerer — local fallback: picks the sentences most relevant to
+* ExtractiveAnswerer - local fallback: picks the sentences most relevant to
   the question from the top-ranked chunks and cites them. No API key, no
-  hallucination — answers are verbatim from the user's documents.
-* GeminiAnswerer — grounded generation with inline [n] citations via the
+  hallucination - answers are verbatim from the user's documents.
+* GeminiAnswerer - grounded generation with inline [n] citations via the
   Gemini API (GEMINI_API_KEY).
 """
 from __future__ import annotations

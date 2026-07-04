@@ -1,4 +1,4 @@
-# Render Blueprint — deploy the backend with "New > Blueprint" in Render.
+# Render Blueprint - deploy the backend with "New > Blueprint" in Render.
 # The same Dockerfile also works on Northflank (create a combined service
 # with build type "Dockerfile" and context /backend).
 services:

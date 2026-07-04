@@ -3,7 +3,7 @@
 Environment variables are forced to blank BEFORE the app is imported so the
 suite always runs against the local fallback providers (in-memory DB and
 vector store, hashing embeddings, extractive answers) regardless of any
-`.env` file on the developer's machine — env vars take precedence over
+`.env` file on the developer's machine - env vars take precedence over
 `.env` in pydantic-settings.
 """
 from __future__ import annotations

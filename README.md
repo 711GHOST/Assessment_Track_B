@@ -1,4 +1,4 @@
-# RAG Application — Full-Stack Retrieval-Augmented Generation Platform
+# RAG Application - Full-Stack Retrieval-Augmented Generation Platform
 
 A production-style RAG platform where users sign up, upload documents into a
 private knowledge base, and ask questions that are answered **with inline
@@ -6,7 +6,7 @@ citations** grounded in their own documents.
 
 Built with a **provider-agnostic architecture**: every external service
 (LLM, embeddings, reranker, vector DB, database) has a free local fallback,
-so the entire app runs end-to-end **with zero API keys** — then upgrades
+so the entire app runs end-to-end **with zero API keys** - then upgrades
 seamlessly when keys are added.
 
 | | Default (no keys) | With API keys |
@@ -21,28 +21,28 @@ seamlessly when keys are added.
 
 ## Features
 
-- **Authentication** — register / login / logout with bcrypt password
+- **Authentication** - register / login / logout with bcrypt password
   hashing, short-lived JWT access tokens, and rotating revocable refresh
   tokens.
-- **Private multi-tenant knowledge bases** — every document and vector is
+- **Private multi-tenant knowledge bases** - every document and vector is
   namespaced by user; users can never retrieve each other's content
   (covered by tests).
-- **Grounded answers with citations** — every answer cites the exact
+- **Grounded answers with citations** - every answer cites the exact
   chunks it came from, with source title, chunk index, relevance score and
   snippet.
-- **Answer confidence scoring** — each response carries a 0–100 grounding
+- **Answer confidence scoring** - each response carries a 0–100 grounding
   score (from retrieval strength), shown as an animated ring.
-- **AI-suggested questions** — starter questions auto-generated from the
+- **AI-suggested questions** - starter questions auto-generated from the
   salient terms in your indexed documents.
-- **Answer feedback** — thumbs up/down per answer, rolled into workspace
+- **Answer feedback** - thumbs up/down per answer, rolled into workspace
   analytics.
-- **Workspace analytics** — live dashboard of documents, chunks, questions,
+- **Workspace analytics** - live dashboard of documents, chunks, questions,
   average confidence, average latency and helpful votes.
-- **Scoped questioning** — restrict a question to selected documents.
-- **Chat history** — persisted per user, clearable.
-- **Security hardening** — per-IP rate limiting, security headers, CORS
+- **Scoped questioning** - restrict a question to selected documents.
+- **Chat history** - persisted per user, clearable.
+- **Security hardening** - per-IP rate limiting, security headers, CORS
   allowlist, account-enumeration-safe login errors, password policy.
-- **Graceful degradation** — if a provider call fails at runtime, the
+- **Graceful degradation** - if a provider call fails at runtime, the
   pipeline falls back to extractive answering instead of erroring.
 
 ### Experience
@@ -90,7 +90,7 @@ Full design rationale in [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Frontend**: React 18 + Vite, React Router, hand-rolled CSS design system
 - **Storage**: in-memory ➜ MongoDB (Motor) · in-memory vectors ➜ Qdrant
 - **Models**: local fallbacks ➜ Gemini (LLM + embeddings), Cohere (rerank)
-- **Tests**: pytest — 33 tests covering auth, isolation, ingestion, retrieval,
+- **Tests**: pytest - 33 tests covering auth, isolation, ingestion, retrieval,
   confidence, suggestions, feedback and analytics
 - **Deploy**: Docker → Render / Northflank (API), Vercel (frontend)
 
@@ -130,7 +130,7 @@ cd backend
 python -m venv .venv
 .venv\Scripts\activate          # Windows   (macOS/Linux: source .venv/bin/activate)
 pip install -r requirements.txt
-uvicorn app.main:app --reload   # http://127.0.0.1:8000 — docs at /docs
+uvicorn app.main:app --reload   # http://127.0.0.1:8000 - docs at /docs
 ```
 
 **Frontend** (second terminal)

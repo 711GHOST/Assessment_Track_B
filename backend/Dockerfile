@@ -1,4 +1,4 @@
-# RAG Application API — works on Render, Northflank, Railway, Fly.io, etc.
+# RAG Application API - works on Render, Northflank, Railway, Fly.io, etc.
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

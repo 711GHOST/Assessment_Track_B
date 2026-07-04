@@ -1,7 +1,7 @@
 """Vector stores with per-user isolation.
 
-* InMemoryVectorStore — default; cosine similarity over normalized vectors.
-* QdrantVectorStore — activated by QDRANT_URL; payload-filtered by user so
+* InMemoryVectorStore - default; cosine similarity over normalized vectors.
+* QdrantVectorStore - activated by QDRANT_URL; payload-filtered by user so
   tenants never see each other's chunks.
 """
 from __future__ import annotations

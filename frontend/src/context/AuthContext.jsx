@@ -57,7 +57,7 @@ export function AuthProvider({ children }) {
           auth: false,
         });
       } catch {
-        // Best effort — clear locally regardless.
+        // Best effort - clear locally regardless.
       }
     }
     clearTokens();

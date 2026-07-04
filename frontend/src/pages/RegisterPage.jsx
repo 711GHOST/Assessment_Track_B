@@ -23,7 +23,7 @@ export default function RegisterPage() {
     setBusy(true);
     try {
       await register(fullName, email, password);
-      toast("Account created — welcome to RAG Studio!", "success");
+      toast("Account created - welcome to RAG Studio!", "success");
       navigate("/");
     } catch (err) {
       setError(err.message);

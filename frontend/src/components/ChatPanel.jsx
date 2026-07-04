@@ -181,7 +181,7 @@ export default function ChatPanel({ documents, selectedIds, suggestions, onActiv
             <p>
               {documents.length === 0
                 ? "Upload a document on the left, then ask a question about it."
-                : "Ask a question — every answer comes with citations and a confidence score."}
+                : "Ask a question - every answer comes with citations and a confidence score."}
             </p>
             {showSuggestions && (
               <div className="suggestions">

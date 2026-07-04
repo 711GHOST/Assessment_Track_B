@@ -1,11 +1,11 @@
 """Embedding providers.
 
-* HashingEmbedder — fully local, zero dependencies, deterministic. Uses the
+* HashingEmbedder - fully local, zero dependencies, deterministic. Uses the
   classic feature-hashing trick (token + bigram features hashed into a fixed
   dimensional space, L2-normalized). Quality is below neural embeddings but
   it costs nothing, needs no downloads and keeps the whole pipeline testable
   offline.
-* GeminiEmbedder — neural embeddings via the Gemini API. Enabled with
+* GeminiEmbedder - neural embeddings via the Gemini API. Enabled with
   EMBEDDING_PROVIDER=gemini + GEMINI_API_KEY.
 """
 from __future__ import annotations

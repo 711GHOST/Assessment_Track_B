@@ -1,4 +1,4 @@
-// A continuously rotating 3D cube built purely from CSS transforms — the
+// A continuously rotating 3D cube built purely from CSS transforms - the
 // brand mark. `size` scales it for navbar vs. auth-hero contexts.
 export default function Logo({ size = 34, withText = true }) {
   return (

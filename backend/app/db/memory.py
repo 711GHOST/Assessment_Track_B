@@ -1,4 +1,4 @@
-"""In-memory repositories — the zero-setup default.
+"""In-memory repositories - the zero-setup default.
 
 Data lives for the lifetime of the process. Perfect for local development,
 demos and tests; set MONGODB_URI to switch to persistent storage.

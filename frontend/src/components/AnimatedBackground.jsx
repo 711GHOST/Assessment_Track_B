@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 // A lightweight, GPU-friendly canvas of drifting depth particles that gently
-// parallax toward the cursor — paired with CSS aurora blobs behind it. No
+// parallax toward the cursor - paired with CSS aurora blobs behind it. No
 // external 3D library, so the bundle stays small and the build stays reliable.
 export default function AnimatedBackground() {
   const canvasRef = useRef(null);
