@@ -163,6 +163,22 @@ class QdrantVectorStore(VectorStore):
                 collection_name=self._collection,
                 vectors_config=qm.VectorParams(size=dim, distance=qm.Distance.COSINE),
             )
+        # Qdrant requires a payload index on any field used in a filter
+        # (per-user isolation + document scoping). Idempotent: safe to call
+        # on every startup, including for pre-existing collections.
+        self._ensure_payload_index("user_id")
+        self._ensure_payload_index("document_id")
+
+    def _ensure_payload_index(self, field: str) -> None:
+        try:
+            self._client.create_payload_index(
+                collection_name=self._collection,
+                field_name=field,
+                field_schema=self._qm.PayloadSchemaType.KEYWORD,
+            )
+        except Exception:
+            # Index already exists (or a transient race) — safe to ignore.
+            pass
 
     def upsert(self, user_id, document_id, title, chunks, vectors) -> None:
         qm = self._qm

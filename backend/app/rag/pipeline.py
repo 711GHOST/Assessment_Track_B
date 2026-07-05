@@ -200,7 +200,11 @@ class RagPipeline:
         across a sample of chunks and fills question templates. When a Gemini
         key is configured, richer suggestions could be generated instead.
         """
-        texts = self.store.sample_texts(user_id, limit=60)
+        try:
+            texts = self.store.sample_texts(user_id, limit=60)
+        except Exception:
+            logger.exception("sample_texts failed; returning no suggestions")
+            return []
         if not texts:
             return []
 
