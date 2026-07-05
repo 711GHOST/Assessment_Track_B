@@ -196,11 +196,14 @@ class QdrantVectorStore(VectorStore):
         return qm.Filter(must=must)
 
     def search(self, user_id, vector, top_k, document_ids=None) -> list[ChunkHit]:
-        hits = self._client.search(
+        # `query_points` is the modern API (the older `.search` was removed in
+        # recent qdrant-client releases).
+        response = self._client.query_points(
             collection_name=self._collection,
-            query_vector=vector,
+            query=list(vector),
             limit=top_k,
             query_filter=self._filter(user_id, document_ids),
+            with_payload=True,
         )
         return [
             ChunkHit(
@@ -210,7 +213,7 @@ class QdrantVectorStore(VectorStore):
                 chunk_index=hit.payload["chunk_index"],
                 document_title=hit.payload.get("title", "Untitled"),
             )
-            for hit in hits
+            for hit in response.points
         ]
 
     def delete_document(self, user_id, document_id) -> None:
@@ -222,12 +225,42 @@ class QdrantVectorStore(VectorStore):
             ),
         )
 
-    def sample_texts(self, user_id, limit=50) -> list[str]:
+    def _scroll_records(self, user_id, document_ids=None, limit=500):
         records, _ = self._client.scroll(
             collection_name=self._collection,
-            scroll_filter=self._filter(user_id, None),
+            scroll_filter=self._filter(user_id, document_ids),
             limit=limit,
             with_payload=True,
             with_vectors=False,
         )
-        return [r.payload.get("text", "") for r in records]
+        return records
+
+    def sample_texts(self, user_id, limit=50) -> list[str]:
+        return [
+            r.payload.get("text", "")
+            for r in self._scroll_records(user_id, limit=limit)
+        ]
+
+    def keyword_search(self, user_id, query, top_k, document_ids=None) -> list[ChunkHit]:
+        # BM25 over the user's chunks (fetched via scroll) so hybrid retrieval
+        # also works on Qdrant. Capped for latency; fine for typical corpora.
+        records = self._scroll_records(user_id, document_ids, limit=500)
+        if not records:
+            return []
+        corpus = [content_tokens_list(r.payload.get("text", "")) for r in records]
+        scores = bm25_scores(query, corpus)
+        ranked = sorted(
+            ((s, r) for s, r in zip(scores, records) if s > 0),
+            key=lambda pair: pair[0],
+            reverse=True,
+        )
+        return [
+            ChunkHit(
+                text=r.payload["text"],
+                score=round(s, 6),
+                document_id=r.payload["document_id"],
+                chunk_index=r.payload["chunk_index"],
+                document_title=r.payload.get("title", "Untitled"),
+            )
+            for s, r in ranked[:top_k]
+        ]

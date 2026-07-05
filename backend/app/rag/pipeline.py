@@ -113,9 +113,13 @@ class RagPipeline:
         vector_hits = self.store.search(
             user_id, query_vector, top_k=wide, document_ids=document_ids
         )
-        keyword_hits = self.store.keyword_search(
-            user_id, question, top_k=wide, document_ids=document_ids
-        )
+        try:
+            keyword_hits = self.store.keyword_search(
+                user_id, question, top_k=wide, document_ids=document_ids
+            )
+        except Exception:
+            logger.exception("Keyword search failed; using vector results only")
+            keyword_hits = []
         candidates = _reciprocal_rank_fusion([vector_hits, keyword_hits], limit=wide)
 
         if not candidates:
