@@ -2,6 +2,7 @@
 from app.rag.chunking import chunk_text
 from app.rag.embeddings import HashingEmbedder
 from app.rag.reranker import LexicalReranker
+from app.rag.text import bm25_scores, content_tokens_list
 from app.rag.vectorstore import ChunkHit, InMemoryVectorStore
 
 
@@ -67,3 +68,36 @@ def test_lexical_reranker_prefers_keyword_overlap():
     ]
     ranked = LexicalReranker().rerank("What does LangChain provide?", hits)
     assert ranked[0].document_id == "d2"
+
+
+def test_bm25_ranks_keyword_match_first():
+    docs = [
+        content_tokens_list("Paris is the capital of France and a lovely city."),
+        content_tokens_list("Photosynthesis converts sunlight into chemical energy."),
+        content_tokens_list("The capital of Japan is Tokyo, a huge metropolis."),
+    ]
+    scores = bm25_scores("What is the capital of France?", docs)
+    assert scores[0] == max(scores)  # the France/capital doc wins
+    assert scores[1] == 0.0  # unrelated doc scores nothing
+
+
+def test_keyword_search_finds_exact_terms_and_isolates_users():
+    embedder = HashingEmbedder()
+    store = InMemoryVectorStore()
+    chunks = [
+        "The quarterly revenue for fiscal 2024 reached forty million dollars.",
+        "Employees enjoy flexible remote working arrangements.",
+    ]
+    store.upsert("owner", "doc1", "Report", chunks, embedder.embed(chunks))
+
+    hits = store.keyword_search("owner", "quarterly revenue", top_k=5)
+    assert hits and hits[0].text.startswith("The quarterly revenue")
+
+    # A different user shares nothing.
+    assert store.keyword_search("intruder", "quarterly revenue", top_k=5) == []
+
+    # Document scoping is respected.
+    scoped = store.keyword_search(
+        "owner", "quarterly revenue", top_k=5, document_ids=["other-doc"]
+    )
+    assert scoped == []

@@ -24,7 +24,9 @@ os.environ.update(
         "QDRANT_URL": "",
         "QDRANT_API_KEY": "",
         "MONGODB_URI": "",
+        # Force deterministic offline providers regardless of what's installed.
         "EMBEDDING_PROVIDER": "local",
+        "RERANKER_PROVIDER": "local",
         "JWT_SECRET": "test-secret-not-for-production-0123456789abcdef",
         "ENVIRONMENT": "test",
     }

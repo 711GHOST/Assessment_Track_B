@@ -18,8 +18,17 @@
 - [x] Animated 3D UI: constellation background, tilt cards, confidence ring,
       typewriter answers, count-up stats, drag-and-drop upload, toasts
 - [x] Dark / light theme toggle
-- [x] 33-test pytest suite; live end-to-end browser verification
 - [x] Dockerfile, render.yaml, vercel.json, deployment guide
+
+## Done (v2.1 — RAG quality + mobile)
+
+- [x] Hybrid retrieval: dense vectors + BM25, fused with Reciprocal Rank Fusion
+- [x] Local **neural** models (no key): fastembed BGE-small embeddings +
+      cross-encoder reranker, with graceful fallback to hashing + lexical
+- [x] Semantic extractive answering (answers paraphrased questions)
+- [x] Scale-invariant lexical reranker + confidence calibration
+- [x] Fully responsive: mobile Documents/Chat tab layout, touch-friendly sizing
+- [x] 35-test pytest suite; neural path + mobile verified in-browser
 
 ## Next up (fill in the blanks)
 

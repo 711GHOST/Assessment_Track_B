@@ -11,6 +11,8 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from app.rag.text import bm25_scores, content_tokens_list
+
 
 @dataclass
 class ChunkHit:
@@ -53,6 +55,16 @@ class VectorStore(ABC):
 
     @abstractmethod
     def sample_texts(self, user_id: str, limit: int = 50) -> list[str]: ...
+
+    def keyword_search(
+        self,
+        user_id: str,
+        query: str,
+        top_k: int,
+        document_ids: list[str] | None = None,
+    ) -> list[ChunkHit]:
+        """BM25 lexical retrieval. Optional; defaults to none (vector-only)."""
+        return []
 
 
 class InMemoryVectorStore(VectorStore):
@@ -107,6 +119,31 @@ class InMemoryVectorStore(VectorStore):
 
     def sample_texts(self, user_id, limit=50) -> list[str]:
         return [r["text"] for r in self._records.get(user_id, [])[:limit]]
+
+    def keyword_search(self, user_id, query, top_k, document_ids=None) -> list[ChunkHit]:
+        records = self._records.get(user_id, [])
+        if document_ids:
+            allowed = set(document_ids)
+            records = [r for r in records if r["document_id"] in allowed]
+        if not records:
+            return []
+        corpus = [content_tokens_list(r["text"]) for r in records]
+        scores = bm25_scores(query, corpus)
+        ranked = sorted(
+            ((s, r) for s, r in zip(scores, records) if s > 0),
+            key=lambda pair: pair[0],
+            reverse=True,
+        )
+        return [
+            ChunkHit(
+                text=record["text"],
+                score=round(score, 6),
+                document_id=record["document_id"],
+                chunk_index=record["chunk_index"],
+                document_title=record["title"],
+            )
+            for score, record in ranked[:top_k]
+        ]
 
 
 class QdrantVectorStore(VectorStore):

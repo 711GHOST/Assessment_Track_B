@@ -40,26 +40,35 @@ api/routes  →  schemas (validation)  →  services (pipeline)  →  db / rag p
 - *Chunking*: sentence-aware packing to ~200 words with ~40-word overlap
   (word counts approximate tokens well enough at this scale). Sentences are
   never split mid-way unless a single sentence exceeds the budget.
-- *Embeddings (default)*: feature hashing - token + bigram features hashed
-  into a 384-d signed space, L2-normalized. Deterministic, offline, and a
-  classic IR technique (cf. scikit-learn's `HashingVectorizer`); weaker
-  than neural embeddings but the honest trade-off for a keyless default.
-- *Embeddings (upgraded)*: Gemini `text-embedding-004` (768-d). The vector
-  collection name embeds the dimension (`rag_chunks_384` vs `_768`) so
-  switching providers can never mix incompatible vectors.
+- *Embeddings (default, `auto`)*: neural **BGE-small-en-v1.5** (384-d) via
+  fastembed/ONNX — a genuine sentence-embedding model that matches
+  paraphrases (e.g. "vacation" ≈ "paid leave"), no API key. If fastembed
+  isn't installed it falls back to **feature hashing** (token + bigram
+  features hashed into a 384-d signed space; deterministic, offline; cf.
+  scikit-learn's `HashingVectorizer`).
+- *Embeddings (hosted)*: Gemini `text-embedding-004` (768-d). The Qdrant
+  collection name is namespaced by embedder + dimension so switching
+  providers can never mix incompatible vectors.
 
-**Query** - `question → embed → retrieve wide → rerank → answer → cite`
+**Query** - `question → embed → hybrid retrieve → fuse → rerank → answer → cite`
 
-- Retrieval fetches `3 × top_k` candidates, then the reranker narrows to
-  `top_k` - a standard two-stage retrieval pattern.
-- *Reranker (default)*: blends vector score with stemmed keyword overlap
-  (50/50) - cheap cross-checking that corrects hashing-embedding noise.
-- *Answerer (default)*: extractive - selects the sentences most relevant to
-  the question from top chunks and cites their chunk of origin. It cannot
-  hallucinate, because it only quotes.
-- *Answerer (upgraded)*: Gemini with a grounding prompt that requires `[n]`
-  citations and mandates an explicit "I could not find…" refusal when the
-  context lacks the answer.
+- **Hybrid retrieval**: a dense channel (vector cosine) and a sparse channel
+  (**BM25**, Okapi with k1=1.5, b=0.75) each return ~`4 × top_k` candidates.
+  BM25 nails exact-keyword matches that embeddings miss; the dense channel
+  catches paraphrases. The two lists are merged with **Reciprocal Rank
+  Fusion** (`1/(k+rank)`, k=60), then the reranker narrows to `top_k`.
+- *Reranker (default, `auto`)*: neural **cross-encoder**
+  (ms-marco-MiniLM via fastembed), scored through a sigmoid. Falls back to a
+  scale-invariant lexical reranker (min-max normalized retrieval score
+  blended 45/55 with stemmed keyword overlap) so it works on fused
+  candidates from either channel.
+- *Answerer (default)*: extractive — it only quotes, so it cannot
+  hallucinate. With a neural embedder it selects sentences by **semantic
+  similarity** to the question (cosine ≥ 0.52), so paraphrased questions are
+  answered; with the hashing embedder it uses keyword overlap. Returns
+  "I could not find…" when nothing clears the bar.
+- *Answerer (hosted)*: Gemini with a grounding prompt that requires `[n]`
+  citations and mandates an explicit "I could not find…" refusal.
 - Citations carry document id/title, chunk index, snippet and score, so
   the UI can show provenance for every answer.
 

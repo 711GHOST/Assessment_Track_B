@@ -19,12 +19,35 @@ from typing import Any
 
 from app.core.config import Settings
 from app.rag.chunking import chunk_text
-from app.rag.embeddings import GeminiEmbedder, HashingEmbedder
+from app.rag.embeddings import FastEmbedEmbedder, GeminiEmbedder, HashingEmbedder
 from app.rag.llm import NO_ANSWER, ExtractiveAnswerer, GeminiAnswerer
-from app.rag.reranker import _STOPWORDS, CohereReranker, LexicalReranker
+from app.rag.reranker import (
+    _STOPWORDS,
+    CohereReranker,
+    FastEmbedReranker,
+    LexicalReranker,
+)
 from app.rag.vectorstore import ChunkHit, InMemoryVectorStore, QdrantVectorStore
 
 logger = logging.getLogger(__name__)
+
+
+def _reciprocal_rank_fusion(
+    rankings: list[list[ChunkHit]], limit: int, k: int = 60
+) -> list[ChunkHit]:
+    """Merge several ranked candidate lists into one via Reciprocal Rank
+    Fusion. Each chunk's fused score is the sum of 1/(k+rank) across the
+    lists it appears in; the first-seen ChunkHit (with its channel score) is
+    kept for downstream reranking."""
+    fused: dict[tuple[str, int], float] = {}
+    hit_by_key: dict[tuple[str, int], ChunkHit] = {}
+    for hits in rankings:
+        for rank, hit in enumerate(hits):
+            key = (hit.document_id, hit.chunk_index)
+            fused[key] = fused.get(key, 0.0) + 1.0 / (k + rank)
+            hit_by_key.setdefault(key, hit)
+    ordered = sorted(fused, key=lambda key: fused[key], reverse=True)
+    return [hit_by_key[key] for key in ordered[:limit]]
 
 # Rough public pricing for Gemini Flash, used only for the cost estimate
 # shown in the UI (USD per 1M tokens).
@@ -81,11 +104,19 @@ class RagPipeline:
     ) -> QueryResult:
         started = time.perf_counter()
 
-        query_vector = self.embedder.embed([question])[0]
-        # Retrieve wider than requested, then let the reranker pick the best.
-        candidates = self.store.search(
-            user_id, query_vector, top_k=max(top_k * 3, 10), document_ids=document_ids
+        # Hybrid retrieval: a dense (vector) channel and a sparse (BM25)
+        # channel, fused with Reciprocal Rank Fusion. BM25 catches exact
+        # keyword matches that weak embeddings miss; the vector channel
+        # catches paraphrases. The reranker then decides final precision.
+        wide = max(top_k * 4, 12)
+        query_vector = self.embedder.embed_query(question)
+        vector_hits = self.store.search(
+            user_id, query_vector, top_k=wide, document_ids=document_ids
         )
+        keyword_hits = self.store.keyword_search(
+            user_id, question, top_k=wide, document_ids=document_ids
+        )
+        candidates = _reciprocal_rank_fusion([vector_hits, keyword_hits], limit=wide)
 
         if not candidates:
             return QueryResult(
@@ -207,30 +238,75 @@ class RagPipeline:
         }
 
 
+def _build_embedder(settings: Settings):
+    """Resolve the embedding provider.
+
+    gemini            -> Gemini API (needs key)
+    local | hashing   -> deterministic hashing embedder (no deps)
+    fastembed | auto  -> neural BGE-small via fastembed, falling back to
+                         hashing if fastembed is unavailable or fails to load
+    """
+    provider = settings.embedding_provider.lower()
+    if provider == "gemini" and settings.gemini_api_key:
+        return GeminiEmbedder(settings.gemini_api_key)
+    if provider in ("local", "hashing"):
+        return HashingEmbedder()
+    # "auto" (default) or "fastembed"
+    try:
+        embedder = FastEmbedEmbedder()
+        embedder.embed(["warmup"])  # force model load now, not on first request
+        logger.info("Using neural embeddings: %s", embedder.name)
+        return embedder
+    except Exception:
+        logger.warning(
+            "fastembed unavailable; using local hashing embeddings. "
+            "Install 'fastembed' for higher-quality retrieval.",
+            exc_info=True,
+        )
+        return HashingEmbedder()
+
+
+def _build_reranker(settings: Settings):
+    provider = settings.reranker_provider.lower()
+    if settings.cohere_api_key:
+        return CohereReranker(settings.cohere_api_key, settings.cohere_rerank_model)
+    if provider in ("local", "lexical"):
+        return LexicalReranker()
+    try:
+        reranker = FastEmbedReranker()
+        reranker.rerank(
+            "warmup", [ChunkHit("warmup text", 0.0, "d", 0, "t")]
+        )
+        logger.info("Using neural reranker: %s", reranker.name)
+        return reranker
+    except Exception:
+        logger.warning("fastembed reranker unavailable; using lexical reranker.")
+        return LexicalReranker()
+
+
 def build_pipeline(settings: Settings) -> RagPipeline:
-    if settings.embedding_provider.lower() == "gemini" and settings.gemini_api_key:
-        embedder = GeminiEmbedder(settings.gemini_api_key)
-    else:
-        embedder = HashingEmbedder()
+    embedder = _build_embedder(settings)
 
     if settings.qdrant_url:
+        # Namespace the collection by embedder so different embedding models
+        # (which produce incompatible vectors) never share one collection.
+        tag = re.sub(r"[^a-z0-9]+", "_", embedder.name.lower())
         store = QdrantVectorStore(
             url=settings.qdrant_url,
             api_key=settings.qdrant_api_key,
-            collection=settings.qdrant_collection,
+            collection=f"{settings.qdrant_collection}_{tag}",
             dim=embedder.dim,
         )
     else:
         store = InMemoryVectorStore()
 
-    if settings.cohere_api_key:
-        reranker = CohereReranker(settings.cohere_api_key, settings.cohere_rerank_model)
-    else:
-        reranker = LexicalReranker()
+    reranker = _build_reranker(settings)
 
     if settings.gemini_api_key:
         answerer = GeminiAnswerer(settings.gemini_api_key, settings.gemini_model)
     else:
-        answerer = ExtractiveAnswerer()
+        # Semantic sentence selection only pays off with a neural embedder.
+        semantic = not isinstance(embedder, HashingEmbedder)
+        answerer = ExtractiveAnswerer(embedder=embedder, semantic=semantic)
 
     return RagPipeline(embedder, store, reranker, answerer, settings)

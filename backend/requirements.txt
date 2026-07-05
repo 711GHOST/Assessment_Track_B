@@ -9,7 +9,13 @@ email-validator>=2.1
 PyJWT>=2.9
 bcrypt>=4.1
 
-# --- Optional providers (activated by env vars; safe to keep installed) ---
+# --- Local neural models (recommended; no API key) ---
+# Enables BGE-small embeddings + a cross-encoder reranker out of the box
+# (EMBEDDING_PROVIDER/RERANKER_PROVIDER=auto). Downloads small ONNX models on
+# first run. If omitted, the app falls back to hashing + lexical retrieval.
+fastembed>=0.3
+
+# --- Optional hosted providers (activated by env vars; safe to keep installed) ---
 motor>=3.5            # MongoDB   (MONGODB_URI)
 qdrant-client>=1.12   # Qdrant    (QDRANT_URL)
 cohere>=5.9           # Reranker  (COHERE_API_KEY)

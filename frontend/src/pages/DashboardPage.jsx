@@ -13,6 +13,8 @@ export default function DashboardPage() {
   const [providers, setProviders] = useState(null);
   const [stats, setStats] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  // Mobile-only: which panel is visible (side-by-side on desktop).
+  const [mobileTab, setMobileTab] = useState("docs");
 
   const refreshStats = useCallback(async () => {
     try {
@@ -60,12 +62,33 @@ export default function DashboardPage() {
       <Navbar providers={providers} />
       <div className="dashboard-scroll">
         <StatsBar stats={stats} />
-        <div className="dashboard-body">
+
+        <div className="mobile-tabs" role="tablist">
+          <button
+            role="tab"
+            aria-selected={mobileTab === "docs"}
+            className={`mobile-tab${mobileTab === "docs" ? " active" : ""}`}
+            onClick={() => setMobileTab("docs")}
+          >
+            📚 Documents{documents.length > 0 ? ` (${documents.length})` : ""}
+          </button>
+          <button
+            role="tab"
+            aria-selected={mobileTab === "chat"}
+            className={`mobile-tab${mobileTab === "chat" ? " active" : ""}`}
+            onClick={() => setMobileTab("chat")}
+          >
+            💬 Chat
+          </button>
+        </div>
+
+        <div className="dashboard-body" data-mobile-tab={mobileTab}>
           <DocumentsPanel
             documents={documents}
             selectedIds={selectedIds}
             onToggleSelected={toggleSelected}
             onChanged={refreshDocuments}
+            onUploaded={() => setMobileTab("chat")}
           />
           <ChatPanel
             documents={documents}

@@ -8,6 +8,7 @@ export default function DocumentsPanel({
   selectedIds,
   onToggleSelected,
   onChanged,
+  onUploaded,
 }) {
   const toast = useToast();
   const [title, setTitle] = useState("");
@@ -39,6 +40,7 @@ export default function DocumentsPanel({
       setText("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       await onChanged();
+      onUploaded?.();
     } catch (err) {
       toast(err.message, "error");
     } finally {

@@ -1,21 +1,24 @@
 """Embedding providers.
 
-* HashingEmbedder - fully local, zero dependencies, deterministic. Uses the
+* HashingEmbedder — fully local, zero dependencies, deterministic. Uses the
   classic feature-hashing trick (token + bigram features hashed into a fixed
-  dimensional space, L2-normalized). Quality is below neural embeddings but
-  it costs nothing, needs no downloads and keeps the whole pipeline testable
-  offline.
-* GeminiEmbedder - neural embeddings via the Gemini API. Enabled with
-  EMBEDDING_PROVIDER=gemini + GEMINI_API_KEY.
+  dimensional space, L2-normalized). Costs nothing and needs no downloads;
+  paired with BM25 hybrid retrieval it stays useful offline.
+* FastEmbedEmbedder — local *neural* embeddings (BAAI/bge-small-en-v1.5) via
+  fastembed/ONNX. No API key; downloads a small quantized model once. This is
+  the recommended quality default (EMBEDDING_PROVIDER=auto).
+* GeminiEmbedder — hosted neural embeddings via the Gemini API.
+
+All embedders expose `embed(texts)` and `embed_query(text)`; some models
+benefit from asymmetric query/passage encoding.
 """
 from __future__ import annotations
 
 import hashlib
 import math
-import re
 from typing import Protocol
 
-TOKEN_RE = re.compile(r"[a-z0-9]+")
+from app.rag.text import TOKEN_RE
 
 
 class Embedder(Protocol):
@@ -24,6 +27,8 @@ class Embedder(Protocol):
 
     def embed(self, texts: list[str]) -> list[list[float]]: ...
 
+    def embed_query(self, text: str) -> list[float]: ...
+
 
 class HashingEmbedder:
     name = "local/hashing-tf-384"
@@ -31,6 +36,9 @@ class HashingEmbedder:
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         return [self._embed_one(t) for t in texts]
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._embed_one(text)
 
     def _embed_one(self, text: str) -> list[float]:
         vec = [0.0] * self.dim
@@ -47,6 +55,24 @@ class HashingEmbedder:
         return vec
 
 
+class FastEmbedEmbedder:
+    name = "local/bge-small-en-v1.5"
+    dim = 384
+
+    def __init__(self) -> None:
+        from fastembed import TextEmbedding
+
+        self._model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        return [list(map(float, v)) for v in self._model.embed(texts)]
+
+    def embed_query(self, text: str) -> list[float]:
+        # bge models use an asymmetric query encoder for better retrieval.
+        vec = next(iter(self._model.query_embed(text)))
+        return list(map(float, vec))
+
+
 class GeminiEmbedder:
     name = "gemini/text-embedding-004"
     dim = 768
@@ -61,3 +87,6 @@ class GeminiEmbedder:
             model="text-embedding-004", contents=texts
         )
         return [list(e.values) for e in result.embeddings]
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.embed([text])[0]

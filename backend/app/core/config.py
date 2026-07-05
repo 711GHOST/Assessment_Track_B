@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # --- Application ---
     app_name: str = "RAG Application API"
-    version: str = "2.0.0"
+    version: str = "2.1.0"
     environment: str = "development"  # development | production
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
@@ -38,8 +38,13 @@ class Settings(BaseSettings):
     # --- Model providers ---
     gemini_api_key: str = ""  # blank -> extractive answers
     gemini_model: str = "gemini-flash-latest"
-    embedding_provider: str = "local"  # local | gemini
-    cohere_api_key: str = ""  # blank -> lexical reranker
+    # auto -> neural fastembed (BGE-small) if installed, else local hashing.
+    # Options: auto | fastembed | local | hashing | gemini
+    embedding_provider: str = "auto"
+    # auto -> neural fastembed cross-encoder if installed, else lexical.
+    # Options: auto | fastembed | local | lexical  (Cohere key overrides all)
+    reranker_provider: str = "auto"
+    cohere_api_key: str = ""  # blank -> local reranker
     cohere_rerank_model: str = "rerank-english-v3.0"
 
     # --- RAG tuning ---

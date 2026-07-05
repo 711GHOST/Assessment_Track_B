@@ -59,6 +59,13 @@ body,
   height: 100%;
 }
 
+html,
+body {
+  /* Hard guard: never allow horizontal scroll/clipping on any device. */
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
@@ -150,6 +157,7 @@ body {
   align-items: center;
   gap: 12px;
   font-weight: 800;
+  min-width: 0; /* allow the brand to shrink instead of forcing overflow */
 }
 
 .brand-name {
@@ -158,6 +166,9 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .grad-text {
@@ -583,6 +594,8 @@ textarea {
   height: 100%;
   display: flex;
   flex-direction: column;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .navbar {
@@ -597,6 +610,11 @@ textarea {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border-bottom: 1px solid var(--border);
+  max-width: 100%;
+}
+
+.navbar-user {
+  flex-shrink: 0; /* keep the actions intact; the brand truncates instead */
 }
 
 .provider-badges {
@@ -643,6 +661,32 @@ textarea {
   padding: 18px;
   gap: 16px;
   overflow: hidden;
+}
+
+/* Mobile-only tab switcher between Documents and Chat (hidden on desktop). */
+.mobile-tabs {
+  display: none;
+  gap: 8px;
+}
+
+.mobile-tab {
+  flex: 1;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.mobile-tab.active {
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  border-color: transparent;
 }
 
 /* --- Stats bar --- */
@@ -1262,35 +1306,177 @@ textarea {
   }
 }
 
+/* -------- Tablet / large phone -------- */
 @media (max-width: 900px) {
-  body {
-    overflow: auto;
+  .provider-badges {
+    display: none;
   }
 
+  /* Auth: single column, no side hero, comfortable padding. */
   .auth-page {
     grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 72px 20px 40px;
   }
 
   .auth-hero {
     display: none;
   }
 
+  .auth-card {
+    width: 100%;
+    max-width: 440px;
+  }
+
+  /* Dashboard: one panel at a time, switched by the mobile tab bar. */
+  .mobile-tabs {
+    display: flex;
+  }
+
+  .dashboard-scroll {
+    padding: 12px;
+    gap: 12px;
+  }
+
   .dashboard-body {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    gap: 0;
   }
 
-  .documents-panel {
-    max-height: 40vh;
+  .documents-panel,
+  .chat-panel {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
   }
 
-  .provider-badges {
+  .dashboard-body[data-mobile-tab="docs"] .chat-panel {
+    display: none;
+  }
+
+  .dashboard-body[data-mobile-tab="chat"] .documents-panel {
     display: none;
   }
 
   .bubble,
   .bubble-assistant {
-    max-width: 96%;
+    max-width: 92%;
     width: auto;
+  }
+}
+
+/* -------- Phone -------- */
+@media (max-width: 640px) {
+  .navbar {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .navbar-user {
+    gap: 8px;
+  }
+
+  /* Keep the avatar, drop the name text to save room. */
+  .user-name {
+    display: none;
+  }
+
+  /* On the narrowest screens the avatar is redundant with the button. */
+  .user-chip {
+    display: none;
+  }
+
+  .navbar .btn-ghost {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  /* Slightly smaller theme toggle to free up navbar width. */
+  .theme-track {
+    width: 46px;
+    height: 26px;
+  }
+
+  [data-theme="light"] .theme-thumb {
+    transform: translateX(20px);
+  }
+
+  .stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 11px 12px;
+    gap: 9px;
+  }
+
+  .stat-icon {
+    font-size: 18px;
+  }
+
+  .stat-value {
+    font-size: 17px;
+  }
+
+  /* 16px inputs prevent iOS Safari from auto-zooming on focus. */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  .chat-input input {
+    font-size: 16px;
+  }
+
+  .chat-messages {
+    padding: 16px 14px;
+  }
+
+  .chat-input {
+    padding: 12px 14px 14px;
+  }
+
+  .chat-header,
+  .documents-panel {
+    padding: 16px;
+  }
+
+  .assistant-top {
+    gap: 10px;
+  }
+
+  .answer-actions {
+    margin-left: 0;
+  }
+
+  .answer-meta {
+    gap: 8px;
+  }
+
+  .auth-card {
+    padding: 26px 20px 22px;
+  }
+
+  .hero-title {
+    font-size: 30px;
+  }
+
+  .toast-stack {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .toast {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .document-title {
+    max-width: 60vw;
   }
 }
 
