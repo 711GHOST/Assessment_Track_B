@@ -1,13 +1,13 @@
 """Embedding providers.
 
-* HashingEmbedder — fully local, zero dependencies, deterministic. Uses the
+* HashingEmbedder - fully local, zero dependencies, deterministic. Uses the
   classic feature-hashing trick (token + bigram features hashed into a fixed
   dimensional space, L2-normalized). Costs nothing and needs no downloads;
   paired with BM25 hybrid retrieval it stays useful offline.
-* FastEmbedEmbedder — local *neural* embeddings (BAAI/bge-small-en-v1.5) via
+* FastEmbedEmbedder - local *neural* embeddings (BAAI/bge-small-en-v1.5) via
   fastembed/ONNX. No API key; downloads a small quantized model once. This is
   the recommended quality default (EMBEDDING_PROVIDER=auto).
-* GeminiEmbedder — hosted neural embeddings via the Gemini API.
+* GeminiEmbedder - hosted neural embeddings via the Gemini API.
 
 All embedders expose `embed(texts)` and `embed_query(text)`; some models
 benefit from asymmetric query/passage encoding.

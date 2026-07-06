@@ -59,7 +59,7 @@ A polished, animated single-page app: a 3D constellation background with
 aurora lighting, a rotating 3D logo, glassmorphism panels with cursor-reactive
 tilt, "streaming" typewriter answers, an animated confidence ring, count-up
 stat cards, drag-and-drop upload, toast notifications, and a **dark / light
-theme toggle**. **Fully responsive** — on phones the dashboard becomes a
+theme toggle**. **Fully responsive** - on phones the dashboard becomes a
 Documents/Chat tab switcher with touch-friendly controls.
 
 ## Architecture

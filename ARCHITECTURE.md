@@ -41,7 +41,7 @@ api/routes  →  schemas (validation)  →  services (pipeline)  →  db / rag p
   (word counts approximate tokens well enough at this scale). Sentences are
   never split mid-way unless a single sentence exceeds the budget.
 - *Embeddings (default, `auto`)*: neural **BGE-small-en-v1.5** (384-d) via
-  fastembed/ONNX — a genuine sentence-embedding model that matches
+  fastembed/ONNX - a genuine sentence-embedding model that matches
   paraphrases (e.g. "vacation" ≈ "paid leave"), no API key. If fastembed
   isn't installed it falls back to **feature hashing** (token + bigram
   features hashed into a 384-d signed space; deterministic, offline; cf.
@@ -62,7 +62,7 @@ api/routes  →  schemas (validation)  →  services (pipeline)  →  db / rag p
   scale-invariant lexical reranker (min-max normalized retrieval score
   blended 45/55 with stemmed keyword overlap) so it works on fused
   candidates from either channel.
-- *Answerer (default)*: extractive — it only quotes, so it cannot
+- *Answerer (default)*: extractive - it only quotes, so it cannot
   hallucinate. With a neural embedder it selects sentences by **semantic
   similarity** to the question (cosine ≥ 0.52), so paraphrased questions are
   answered; with the hashing embedder it uses keyword overlap. Returns

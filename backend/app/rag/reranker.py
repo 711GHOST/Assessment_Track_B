@@ -1,10 +1,10 @@
 """Rerankers reorder retrieved chunks by relevance to the query.
 
-* LexicalReranker — local fallback blending normalized retrieval score with
+* LexicalReranker - local fallback blending normalized retrieval score with
   keyword overlap; scale-invariant so it works on fused (hybrid) candidates.
-* FastEmbedReranker — local neural cross-encoder (ONNX, no API key) for a
+* FastEmbedReranker - local neural cross-encoder (ONNX, no API key) for a
   real precision boost; enabled when fastembed is installed.
-* CohereReranker — hosted neural cross-encoder via the Cohere API.
+* CohereReranker - hosted neural cross-encoder via the Cohere API.
 """
 from __future__ import annotations
 

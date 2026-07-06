@@ -20,7 +20,7 @@
 - [x] Dark / light theme toggle
 - [x] Dockerfile, render.yaml, vercel.json, deployment guide
 
-## Done (v2.1 — RAG quality + mobile)
+## Done (v2.1 - RAG quality + mobile)
 
 - [x] Hybrid retrieval: dense vectors + BM25, fused with Reciprocal Rank Fusion
 - [x] Local **neural** models (no key): fastembed BGE-small embeddings +

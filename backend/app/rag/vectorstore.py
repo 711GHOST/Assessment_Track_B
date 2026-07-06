@@ -177,7 +177,7 @@ class QdrantVectorStore(VectorStore):
                 field_schema=self._qm.PayloadSchemaType.KEYWORD,
             )
         except Exception:
-            # Index already exists (or a transient race) — safe to ignore.
+            # Index already exists (or a transient race) - safe to ignore.
             pass
 
     def upsert(self, user_id, document_id, title, chunks, vectors) -> None:
